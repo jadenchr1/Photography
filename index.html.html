@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Manager & Client Revenue Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        studio: {
+                            900: '#0B0F17',
+                            800: '#151C28',
+                            700: '#1E293B',
+                            600: '#334155',
+                            accent: '#6366F1', // Indigo
+                            accentHover: '#4F46E5',
+                            amber: '#F59E0B',
+                            emerald: '#10B981',
+                            rose: '#F43F5E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0B0F17;
+            color: #F3F4F6;
+        }
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #151C28;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased bg-studio-900 text-gray-100">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Main Navigation Bar -->
+    <header class="border-b border-studio-700/60 bg-studio-800/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid font-bold fa-camera-retro text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">FrameFlow Studio Pro</h1>
+                    <p class="text-xs text-indigo-400 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-user-shield text-[10px]"></i> Client & Revenue Operations Manager
+                    </p>
+                </div>
+            </div>
+
+            <!-- Tab Navigation & Action Button -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-studio-900 p-1 rounded-xl border border-studio-700 flex space-x-1 text-xs font-semibold">
+                    <button onclick="switchView('tracker')" id="tab-btn-tracker" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-check"></i> Client Tracker
+                    </button>
+                    <button onclick="switchView('pricelist')" id="tab-btn-pricelist" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-tags"></i> Price List
+                    </button>
+                    <button onclick="switchView('sheets')" id="tab-btn-sheets" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-table"></i> Google Sync
+                    </button>
+                </div>
+
+                <button onclick="openClientModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> New Shoot
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- View 1: Main Client Tracker View -->
+        <div id="view-tracker" class="space-y-8">
+            <!-- Top Financial & Pipeline Metrics -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Total Guaranteed Revenue (Min Revenue) -->
+                <div class="bg-studio-800 border border-studio-700/70 rounded-2xl p-5 relative overflow-hidden group hover:border-indigo-500/50 transition-all">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Min. Package Revenue</span>
+                        <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-sack-dollar"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h2 id="metric-min-revenue" class="text-2xl font-bold text-white">$0</h2>
+                        <p class="text-xs text-gray-400 mt-1">Contract base shoot value</p>
+                    </div>
+                </div>
+
+                <!-- Locked Revenue Card (Pending Selection) -->
+                <div class="bg-studio-800 border border-studio-700/70 rounded-2xl p-5 relative overflow-hidden group hover:border-amber-500/50 transition-all">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-amber-400">Locked Revenue</span>
+                        <div class="w-9 h-9 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h2 id="metric-locked-revenue" class="text-2xl font-bold text-white">$0</h2>
+                        <p class="text-xs text-gray-400 mt-1">Pending client photo selection</p>
+                    </div>
+                </div>
+
+                <!-- Urgent Action Needed Card -->
+                <div class="bg-studio-800 border border-studio-700/70 rounded-2xl p-5 relative overflow-hidden group hover:border-rose-500/50 transition-all">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-rose-400">Action Required</span>
+                        <div class="w-9 h-9 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h2 id="metric-overdue-count" class="text-2xl font-bold text-white">0</h2>
+                        <p class="text-xs text-gray-400 mt-1">Shoots pending 3+ days</p>
+                    </div>
+                </div>
+
+                <!-- Completed Revenue -->
+                <div class="bg-studio-800 border border-studio-700/70 rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/50 transition-all">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Collected Revenue</span>
+                        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h2 id="metric-completed-revenue" class="text-2xl font-bold text-white">$0</h2>
+                        <p class="text-xs text-gray-400 mt-1">Fully delivered & paid</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Workspace Area -->
+            <section class="bg-studio-800 border border-studio-700/70 rounded-2xl shadow-xl overflow-hidden">
+                <!-- Filter & Search Toolbar -->
+                <div class="p-5 border-b border-studio-700/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Search Box -->
+                    <div class="relative flex-1 max-w-md">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" id="search-input" oninput="renderClientList()" placeholder="Search client name, location address, or gallery..." class="w-full bg-studio-900 border border-studio-700 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-all">
+                    </div>
+
+                    <!-- Status Filter Pills -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="setFilter('all')" id="filter-all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-indigo-600 text-white shadow-md">
+                            All Shoots
+                        </button>
+                        <button onclick="setFilter('action')" id="filter-action" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-studio-900 border border-studio-700 text-gray-300 hover:text-white flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Action Required (&ge;3 Days)
+                        </button>
+                        <button onclick="setFilter('pending')" id="filter-pending" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-studio-900 border border-studio-700 text-gray-300 hover:text-white">
+                            Pending Selection
+                        </button>
+                        <button onclick="setFilter('editing')" id="filter-editing" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-studio-900 border border-studio-700 text-gray-300 hover:text-white">
+                            Editing
+                        </button>
+                        <button onclick="setFilter('completed')" id="filter-completed" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-studio-900 border border-studio-700 text-gray-300 hover:text-white">
+                            Completed
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Client Tracker Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-studio-900/60 border-b border-studio-700/70 text-xs text-gray-400 uppercase tracking-wider">
+                                <th class="py-3.5 px-5 font-semibold">Client & Address</th>
+                                <th class="py-3.5 px-5 font-semibold">Shooting Date</th>
+                                <th class="py-3.5 px-5 font-semibold">Selection Counter</th>
+                                <th class="py-3.5 px-5 font-semibold">Status</th>
+                                <th class="py-3.5 px-5 font-semibold text-right">Min. Rev / Due</th>
+                                <th class="py-3.5 px-5 font-semibold text-center">Follow-Up / Sync</th>
+                                <th class="py-3.5 px-5 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-table-body" class="divide-y divide-studio-700/50 text-sm">
+                            <!-- Dynamic Rows Injected Here -->
+                        </tbody>
+                    </table>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="hidden flex-col items-center justify-center py-16 text-center px-4">
+                        <div class="w-16 h-16 rounded-2xl bg-studio-700/40 flex items-center justify-center text-gray-500 text-2xl mb-4">
+                            <i class="fa-regular fa-folder-open"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-300 text-base">No client shoots found</h3>
+                        <p class="text-xs text-gray-500 mt-1 max-w-sm">Try tweaking your search filters or add a new client shoot to start tracking selection timelines.</p>
+                        <button onclick="openClientModal()" class="mt-4 bg-studio-700 hover:bg-studio-600 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            + Add First Client Shoot
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- View 2: Interactive Photography Price List Reference Tab -->
+        <div id="view-pricelist" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Studio Price List & Packages</h2>
+                    <p class="text-xs text-gray-400">Quick reference menu to quote clients on the go or while chatting.</p>
+                </div>
+                <button onclick="openPriceModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-plus"></i> Add Package / Item
+                </button>
+            </div>
+
+            <div id="price-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Price Cards Injected Here -->
+            </div>
+        </div>
+
+        <!-- View 3: Google Sheets Integration Tab -->
+        <div id="view-sheets" class="hidden space-y-6">
+            <div class="bg-studio-800 border border-studio-700/80 rounded-2xl p-6 space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-file-excel"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Google Sheets Automated Shoot Tracker</h2>
+                        <p class="text-xs text-gray-400">Sync shoots directly to Google Sheets to track annual client frequency (+1 shoot per client).</p>
+                    </div>
+                </div>
+
+                <!-- Webhook Endpoint Configuration -->
+                <div class="bg-studio-900 border border-studio-700 rounded-xl p-4 space-y-3">
+                    <label class="block text-xs font-semibold text-gray-300 uppercase tracking-wider">Your Google Apps Script Webhook URL</label>
+                    <div class="flex gap-2">
+                        <input type="url" id="webhook-url-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="flex-1 bg-studio-800 border border-studio-700 rounded-xl px-3.5 py-2 text-xs text-gray-200 focus:outline-none focus:border-indigo-500 font-mono">
+                        <button onclick="saveWebhookUrl()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+                            Save Link
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-gray-500">Paste your Webhook URL here to enable the 1-Click "Sync to Sheet" button on each client row.</p>
+                </div>
+
+                <!-- Setup Tutorial / Guide -->
+                <div class="space-y-4 pt-2 border-t border-studio-700">
+                    <h3 class="font-bold text-sm text-gray-200 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-indigo-400"></i> How to set up Google Sheets Sync (Free 2-Minute Guide)
+                    </h3>
+                    
+                    <ol class="list-decimal list-inside space-y-3 text-xs text-gray-300 leading-relaxed">
+                        <li>Open a new <strong class="text-white">Google Sheet</strong> and name it <span class="text-emerald-400 font-mono">Studio Client Tracker 2026</span>.</li>
+                        <li>Create columns in Row 1: <span class="bg-studio-900 px-2 py-0.5 rounded font-mono text-indigo-300">Client Name | Date | Address | Min Revenue | Total Shoots</span></li>
+                        <li>In your Google Sheet menu, click <strong class="text-white">Extensions ➔ Apps Script</strong>.</li>
+                        <li>Replace any code in the editor with this script:
+                            <pre class="mt-2 bg-studio-900 border border-studio-700 rounded-xl p-3 text-[11px] text-gray-300 overflow-x-auto font-mono">
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  // Append new shoot entry to sheet
+  sheet.appendRow([
+    data.name,
+    data.sentDate,
+    data.address,
+    data.minRevenue,
+    data.balance,
+    new Date()
+  ]);
+  
+  return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
+}</pre>
+                        </li>
+                        <li>Click <strong class="text-white">Deploy ➔ New deployment</strong>. Select type <strong class="text-white">Web app</strong>.</li>
+                        <li>Set <em>"Who has access"</em> to <strong class="text-emerald-400">Anyone</strong>. Click Deploy and copy the Web App URL into the box above!</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal 1: Add/Edit Client Shoot Form -->
+    <div id="client-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-studio-800 border border-studio-700/80 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden transform transition-all max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b border-studio-700/70 flex items-center justify-between">
+                <h3 id="modal-title" class="font-bold text-lg text-white">Add New Client Shoot</h3>
+                <button onclick="closeClientModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="client-form" onsubmit="handleFormSubmit(event)" class="p-5 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="edit-client-id">
+                
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Client Name / Event Title *</label>
+                    <input type="text" id="form-name" required placeholder="e.g. Sarah & Michael Wedding" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Contact Phone (WhatsApp)</label>
+                        <input type="text" id="form-phone" placeholder="e.g. +6591234567" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Email Address</label>
+                        <input type="email" id="form-email" placeholder="sarah@example.com" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Address Input -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Shoot Location Address</label>
+                    <input type="text" id="form-address" placeholder="e.g. Studio 3, 123 Orchard Road / Sentosa Cove" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Shooting Date *</label>
+                        <input type="date" id="form-sent-date" required class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Photos to Pick (e.g. 30)</label>
+                        <input type="number" id="form-photos-count" placeholder="30" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Financials: Minimum Revenue vs Pending Balance -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Minimum Revenue ($) *</label>
+                        <input type="number" id="form-min-revenue" required min="0" step="0.01" placeholder="800" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Remaining Balance ($)</label>
+                        <input type="number" id="form-balance" min="0" step="0.01" placeholder="400" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Current Status</label>
+                    <select id="form-status" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                        <option value="Pending Selection">Pending Selection</option>
+                        <option value="Selection Completed">Selection Completed</option>
+                        <option value="Editing In Progress">Editing In Progress</option>
+                        <option value="Delivered & Paid">Delivered & Paid</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Proofing Gallery URL</label>
+                    <input type="url" id="form-gallery-link" placeholder="https://pixieset.com/your-gallery-name" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="pt-3 flex items-center justify-end space-x-3 border-t border-studio-700">
+                    <button type="button" onclick="closeClientModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white transition-all">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all">
+                        Save Client Shoot
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Chaser Assistant / Reminder Generator Modal -->
+    <div id="reminder-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-studio-800 border border-studio-700/80 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden transform transition-all">
+            <div class="p-5 border-b border-studio-700/70 flex items-center justify-between bg-studio-900/40">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <i class="fa-solid fa-robot text-base"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-white">Chaser Assistant — Follow-Up Script</h3>
+                        <p id="reminder-client-subtitle" class="text-xs text-gray-400">Client: Sarah</p>
+                    </div>
+                </div>
+                <button onclick="closeReminderModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <!-- Tone / Timeline Selector -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Select Follow-Up Timeline</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="selectTemplateStage('day1')" id="btn-stage-day1" class="stage-btn px-3 py-2 rounded-xl text-xs font-medium border border-studio-700 bg-studio-900 text-gray-300 hover:border-indigo-500 transition-all text-center">
+                            Day 1–2<br><span class="text-[10px] text-gray-400">Gentle Check-in</span>
+                        </button>
+                        <button type="button" onclick="selectTemplateStage('day3')" id="btn-stage-day3" class="stage-btn px-3 py-2 rounded-xl text-xs font-medium border border-studio-700 bg-studio-900 text-gray-300 hover:border-indigo-500 transition-all text-center">
+                            Day 3–5<br><span class="text-[10px] text-amber-400">Friendly Shortlist Help</span>
+                        </button>
+                        <button type="button" onclick="selectTemplateStage('day7')" id="btn-stage-day7" class="stage-btn px-3 py-2 rounded-xl text-xs font-medium border border-studio-700 bg-studio-900 text-gray-300 hover:border-indigo-500 transition-all text-center">
+                            Day 7+<br><span class="text-[10px] text-rose-400">Urgent Editing Schedule</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template Preview Box -->
+                <div class="relative">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Generated Message</label>
+                    <textarea id="reminder-text-area" rows="6" class="w-full bg-studio-900 border border-studio-700 rounded-xl p-4 text-xs sm:text-sm text-gray-200 focus:outline-none focus:border-indigo-500 leading-relaxed font-mono"></textarea>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <button onclick="copyReminderText()" class="w-full bg-studio-700 hover:bg-studio-600 text-white py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-regular fa-copy"></i> Copy to Clipboard
+                    </button>
+                    <button onclick="openWhatsAppDirect()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> Send via WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Add/Edit Price Item Modal -->
+    <div id="price-modal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-studio-800 border border-studio-700/80 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-studio-700/70 flex items-center justify-between">
+                <h3 id="price-modal-title" class="font-bold text-lg text-white">Add Price List Item</h3>
+                <button onclick="closePriceModal()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="price-form" onsubmit="handlePriceFormSubmit(event)" class="p-5 space-y-4">
+                <input type="hidden" id="edit-price-id">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Package Name / Service</label>
+                    <input type="text" id="price-name" required placeholder="e.g. Standard Portrait Package" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Price ($)</label>
+                        <input type="number" id="price-amount" required step="0.01" placeholder="450" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Category</label>
+                        <select id="price-category" class="w-full bg-studio-900 border border-studio-700 rounded-xl px-3.5 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500">
+                            <option value="Shoot Package">Shoot Package</option>
+                            <option value="Extra Photos">Extra Photos</option>
+                            <option value="Prints & Canvas">Prints & Canvas</option>
+                            <option value="Add-on Services">Add-on Services</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Details & Deliverables</label>
+                    <textarea id="price-desc" rows="3" placeholder="e.g. 1 Hour Shoot, 20 Edited Photos, 1 Studio Backdrop" class="w-full bg-studio-900 border border-studio-700 rounded-xl p-3 text-xs text-gray-200 focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+                <div class="pt-3 flex justify-end space-x-3 border-t border-studio-700">
+                    <button type="button" onclick="closePriceModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white">Cancel</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold">Save Package</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script>
+        // Default Client Shoots Initial Data
+        const INITIAL_CLIENTS = [
+            {
+                id: '1',
+                name: 'Rachel & David (Wedding)',
+                phone: '+6591234567',
+                email: 'rachel@example.com',
+                address: 'Chijmes Hall, 30 Victoria St, Singapore',
+                sentDate: getPastDateString(5), // 5 days ago
+                photosToPick: 40,
+                minRevenue: 2500,
+                balance: 850,
+                status: 'Pending Selection',
+                galleryLink: 'https://pixieset.com/sample-rachel-david'
+            },
+            {
+                id: '2',
+                name: 'Marcus Tan (Corporate Headshot)',
+                phone: '+6598765432',
+                email: 'marcus@company.com',
+                address: 'Marina Bay Financial Centre Tower 2',
+                sentDate: getPastDateString(1), // 1 day ago
+                photosToPick: 5,
+                minRevenue: 450,
+                balance: 200,
+                status: 'Pending Selection',
+                galleryLink: 'https://pixieset.com/sample-marcus'
+            },
+            {
+                id: '3',
+                name: 'Chloe Lim (Maternity Session)',
+                phone: '+6581112233',
+                email: 'chloe@example.com',
+                address: 'Studio B, 45 Kallang Pudding Rd',
+                sentDate: getPastDateString(8), // 8 days ago
+                photosToPick: 20,
+                minRevenue: 750,
+                balance: 350,
+                status: 'Selection Completed',
+                galleryLink: 'https://pixieset.com/sample-chloe'
+            }
+        ];
+
+        // Default Photography Price List
+        const INITIAL_PRICELIST = [
+            { id: 'p1', name: 'Standard Studio Session', amount: 450, category: 'Shoot Package', desc: '1 Hour session, 15 high-res edited retouched images.' },
+            { id: 'p2', name: 'Wedding High Day Package', amount: 2800, category: 'Shoot Package', desc: '8 Hours coverage, all color-graded softcopies + 50 fine art retouch picks.' },
+            { id: 'p3', name: 'Additional Retouched Image', amount: 25, category: 'Extra Photos', desc: 'Per extra edited photo beyond package allocation.' },
+            { id: 'p4', name: 'Full Raw / Unedited Album Unlock', amount: 350, category: 'Extra Photos', desc: 'Complete access to all proofing images in high-res JPEG.' }
+        ];
+
+        let clients = [];
+        let priceList = [];
+        let currentFilter = 'all';
+        let activeReminderClient = null;
+        let webhookUrl = '';
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            loadClients();
+            loadPriceList();
+            loadWebhookUrl();
+            renderClientList();
+            renderPriceGrid();
+            updateMetrics();
+        });
+
+        // Date String helper (YYYY-MM-DD)
+        function getPastDateString(daysAgo) {
+            const d = new Date();
+            d.setDate(d.getDate() - daysAgo);
+            return d.toISOString().split('T')[0];
+        }
+
+        // Days Passed Counter calculation
+        function calculateDaysPassed(shootingDateStr) {
+            if (!shootingDateStr) return 0;
+            const shootDate = new Date(shootingDateStr);
+            const today = new Date();
+            shootDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+            const diffTime = today - shootDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays >= 0 ? diffDays : 0;
+        }
+
+        // Navigation Tab Switching
+        function switchView(viewName) {
+            ['tracker', 'pricelist', 'sheets'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${v}`);
+                if (btn) {
+                    btn.className = 'px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition-all flex items-center gap-1.5';
+                }
+            });
+
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${viewName}`);
+            if (activeBtn) {
+                activeBtn.className = 'px-3 py-1.5 rounded-lg bg-indigo-600 text-white transition-all flex items-center gap-1.5';
+            }
+        }
+
+        // Local Storage Management
+        function loadClients() {
+            const saved = localStorage.getItem('frameflow_clients_v2');
+            if (saved) {
+                try { clients = JSON.parse(saved); } catch (e) { clients = INITIAL_CLIENTS; }
+            } else {
+                clients = INITIAL_CLIENTS;
+                saveClients();
+            }
+        }
+
+        function saveClients() {
+            localStorage.setItem('frameflow_clients_v2', JSON.stringify(clients));
+            updateMetrics();
+        }
+
+        function loadPriceList() {
+            const saved = localStorage.getItem('frameflow_pricelist');
+            if (saved) {
+                try { priceList = JSON.parse(saved); } catch (e) { priceList = INITIAL_PRICELIST; }
+            } else {
+                priceList = INITIAL_PRICELIST;
+                savePriceList();
+            }
+        }
+
+        function savePriceList() {
+            localStorage.setItem('frameflow_pricelist', JSON.stringify(priceList));
+        }
+
+        function loadWebhookUrl() {
+            webhookUrl = localStorage.getItem('frameflow_webhook_url') || '';
+            const input = document.getElementById('webhook-url-input');
+            if (input) input.value = webhookUrl;
+        }
+
+        function saveWebhookUrl() {
+            const input = document.getElementById('webhook-url-input');
+            if (input) {
+                webhookUrl = input.value.trim();
+                localStorage.setItem('frameflow_webhook_url', webhookUrl);
+                showToast('Google Sheets Webhook URL saved!', 'success');
+            }
+        }
+
+        // Metrics Calculation
+        function updateMetrics() {
+            let totalMinRev = 0;
+            let lockedRevenue = 0;
+            let completedRevenue = 0;
+            let overdueCount = 0;
+
+            clients.forEach(c => {
+                const days = calculateDaysPassed(c.sentDate);
+                const isPending = c.status === 'Pending Selection';
+                
+                totalMinRev += parseFloat(c.minRevenue || 0);
+
+                if (isPending) {
+                    lockedRevenue += parseFloat(c.balance || 0);
+                    if (days >= 3) overdueCount++;
+                } else if (c.status === 'Delivered & Paid') {
+                    completedRevenue += parseFloat(c.minRevenue || 0);
+                }
+            });
+
+            document.getElementById('metric-min-revenue').textContent = `$${totalMinRev.toLocaleString('en-US', {minimumFractionDigits: 0})}`;
+            document.getElementById('metric-locked-revenue').textContent = `$${lockedRevenue.toLocaleString('en-US', {minimumFractionDigits: 0})}`;
+            document.getElementById('metric-completed-revenue').textContent = `$${completedRevenue.toLocaleString('en-US', {minimumFractionDigits: 0})}`;
+            document.getElementById('metric-overdue-count').textContent = overdueCount;
+        }
+
+        // Render Client Table
+        function renderClientList() {
+            const tbody = document.getElementById('client-table-body');
+            const emptyState = document.getElementById('empty-state');
+            const searchVal = document.getElementById('search-input').value.toLowerCase().trim();
+
+            tbody.innerHTML = '';
+
+            const filtered = clients.filter(client => {
+                const days = calculateDaysPassed(client.sentDate);
+                const matchesSearch = client.name.toLowerCase().includes(searchVal) ||
+                                      (client.address && client.address.toLowerCase().includes(searchVal));
+
+                if (!matchesSearch) return false;
+
+                if (currentFilter === 'action') return client.status === 'Pending Selection' && days >= 3;
+                if (currentFilter === 'pending') return client.status === 'Pending Selection';
+                if (currentFilter === 'editing') return client.status === 'Editing In Progress' || client.status === 'Selection Completed';
+                if (currentFilter === 'completed') return client.status === 'Delivered & Paid';
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            filtered.forEach(client => {
+                const days = calculateDaysPassed(client.sentDate);
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-studio-700/30 transition-all group';
+
+                // Status Badge
+                let statusBadge = '';
+                if (client.status === 'Pending Selection') {
+                    if (days >= 7) {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20"><span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span> Urgent (Day ${days})</span>`;
+                    } else if (days >= 3) {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Pending (${days} Days)</span>`;
+                    } else {
+                        statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Pending (Day ${days})</span>`;
+                    }
+                } else if (client.status === 'Selection Completed') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20"><i class="fa-solid fa-check text-[10px]"></i> Selection Done</span>`;
+                } else if (client.status === 'Editing In Progress') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Editing</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-circle-check text-[10px]"></i> Delivered & Paid</span>`;
+                }
+
+                // Days Counter Box
+                const counterBox = client.status === 'Pending Selection' ? `
+                    <div class="inline-flex items-center px-3 py-1 rounded-xl text-xs font-bold border ${days >= 7 ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' : (days >= 3 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-gray-300 bg-studio-900 border-studio-700')}">
+                        <i class="fa-regular fa-clock mr-1.5 text-xs"></i> Day ${days}
+                    </div>` : `<span class="text-xs text-gray-500">Unlocked</span>`;
+
+                tr.innerHTML = `
+                    <td class="py-4 px-5">
+                        <div class="font-semibold text-gray-200">${escapeHtml(client.name)}</div>
+                        ${client.address ? `<div class="text-xs text-gray-400 mt-0.5 truncate max-w-xs"><i class="fa-solid fa-location-dot text-[10px] text-rose-400 mr-1"></i> ${escapeHtml(client.address)}</div>` : ''}
+                        <div class="text-[11px] text-gray-500 flex items-center gap-2 mt-1">
+                            <span><i class="fa-regular fa-image text-[9px]"></i> ${client.photosToPick || 'N/A'} picks</span>
+                            ${client.galleryLink ? `<a href="${escapeHtml(client.galleryLink)}" target="_blank" class="text-indigo-400 hover:underline flex items-center gap-0.5"><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Gallery</a>` : ''}
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 text-gray-300 text-xs">
+                        <div class="font-medium">${client.sentDate || 'N/A'}</div>
+                        <div class="text-[11px] text-gray-500">${days} days ago</div>
+                    </td>
+                    <td class="py-4 px-5">${counterBox}</td>
+                    <td class="py-4 px-5">
+                        <div class="flex items-center gap-2">
+                            ${statusBadge}
+                            <select onchange="updateClientStatus('${client.id}', this.value)" class="opacity-0 group-hover:opacity-100 transition-opacity bg-studio-900 border border-studio-700 text-gray-300 text-[11px] rounded px-1.5 py-0.5 focus:outline-none">
+                                <option value="Pending Selection" ${client.status === 'Pending Selection' ? 'selected' : ''}>Set: Pending</option>
+                                <option value="Selection Completed" ${client.status === 'Selection Completed' ? 'selected' : ''}>Set: Selected</option>
+                                <option value="Editing In Progress" ${client.status === 'Editing In Progress' ? 'selected' : ''}>Set: Editing</option>
+                                <option value="Delivered & Paid" ${client.status === 'Delivered & Paid' ? 'selected' : ''}>Set: Paid & Done</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td class="py-4 px-5 text-right">
+                        <div class="font-semibold text-white">$${parseFloat(client.minRevenue || 0).toFixed(2)}</div>
+                        <div class="text-[11px] text-amber-400">Due: $${parseFloat(client.balance || 0).toFixed(2)}</div>
+                    </td>
+                    <td class="py-4 px-5 text-center space-x-1">
+                        <button onclick="openReminderModal('${client.id}')" class="inline-flex items-center gap-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-medium border border-indigo-500/30 transition-all">
+                            <i class="fa-solid fa-paper-plane text-[10px]"></i> Chaser
+                        </button>
+                        <button onclick="syncClientToGoogleSheet('${client.id}')" title="Sync Shoot to Google Sheet" class="inline-flex items-center gap-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 py-1 rounded-lg text-xs font-medium border border-emerald-500/30 transition-all">
+                            <i class="fa-solid fa-file-excel text-[10px]"></i> +1 Sheet
+                        </button>
+                    </td>
+                    <td class="py-4 px-5 text-right space-x-2">
+                        <button onclick="editClient('${client.id}')" class="text-gray-400 hover:text-indigo-400 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteClient('${client.id}')" class="text-gray-400 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Set Active Filter
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            ['all', 'action', 'pending', 'editing', 'completed'].forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (btn) btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-studio-900 border border-studio-700 text-gray-300 hover:text-white';
+            });
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if (activeBtn) activeBtn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-indigo-600 text-white shadow-md';
+            renderClientList();
+        }
+
+        // Render Price List Cards
+        function renderPriceGrid() {
+            const grid = document.getElementById('price-grid');
+            grid.innerHTML = '';
+
+            priceList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-studio-800 border border-studio-700/80 rounded-2xl p-5 hover:border-indigo-500/50 transition-all flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${escapeHtml(item.category)}</span>
+                            <span class="text-lg font-bold text-white">$${parseFloat(item.amount).toFixed(2)}</span>
+                        </div>
+                        <h4 class="font-bold text-gray-200 text-base mb-1">${escapeHtml(item.name)}</h4>
+                        <p class="text-xs text-gray-400 leading-relaxed">${escapeHtml(item.desc || 'No deliverables specified.')}</p>
+                    </div>
+                    <div class="pt-4 mt-4 border-t border-studio-700/60 flex items-center justify-between text-xs">
+                        <button onclick="copyPriceItem('${escapeHtml(item.name)}', ${item.amount})" class="text-indigo-400 hover:underline flex items-center gap-1">
+                            <i class="fa-regular fa-copy text-[10px]"></i> Copy Quote
+                        </button>
+                        <div class="space-x-2">
+                            <button onclick="editPriceItem('${item.id}')" class="text-gray-400 hover:text-white"><i class="fa-solid fa-pen text-xs"></i></button>
+                            <button onclick="deletePriceItem('${item.id}')" class="text-gray-400 hover:text-rose-400"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Modal Handlers (Client Shoot)
+        function openClientModal(editId = null) {
+            const form = document.getElementById('client-form');
+            form.reset();
+            
+            if (editId) {
+                const client = clients.find(c => c.id === editId);
+                if (client) {
+                    document.getElementById('modal-title').textContent = 'Edit Client Shoot';
+                    document.getElementById('edit-client-id').value = client.id;
+                    document.getElementById('form-name').value = client.name || '';
+                    document.getElementById('form-phone').value = client.phone || '';
+                    document.getElementById('form-email').value = client.email || '';
+                    document.getElementById('form-address').value = client.address || '';
+                    document.getElementById('form-sent-date').value = client.sentDate || '';
+                    document.getElementById('form-photos-count').value = client.photosToPick || '';
+                    document.getElementById('form-min-revenue').value = client.minRevenue || 0;
+                    document.getElementById('form-balance').value = client.balance || 0;
+                    document.getElementById('form-status').value = client.status || 'Pending Selection';
+                    document.getElementById('form-gallery-link').value = client.galleryLink || '';
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'Add New Client Shoot';
+                document.getElementById('edit-client-id').value = '';
+                document.getElementById('form-sent-date').value = new Date().toISOString().split('T')[0];
+            }
+
+            document.getElementById('client-modal').classList.remove('hidden');
+        }
+
+        function closeClientModal() {
+            document.getElementById('client-modal').classList.add('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-client-id').value;
+            
+            const formData = {
+                id: editId || Date.now().toString(),
+                name: document.getElementById('form-name').value.trim(),
+                phone: document.getElementById('form-phone').value.trim(),
+                email: document.getElementById('form-email').value.trim(),
+                address: document.getElementById('form-address').value.trim(),
+                sentDate: document.getElementById('form-sent-date').value,
+                photosToPick: parseInt(document.getElementById('form-photos-count').value) || 0,
+                minRevenue: parseFloat(document.getElementById('form-min-revenue').value) || 0,
+                balance: parseFloat(document.getElementById('form-balance').value) || 0,
+                status: document.getElementById('form-status').value,
+                galleryLink: document.getElementById('form-gallery-link').value.trim()
+            };
+
+            if (editId) {
+                const index = clients.findIndex(c => c.id === editId);
+                if (index !== -1) clients[index] = formData;
+                showToast('Client shoot updated', 'success');
+            } else {
+                clients.unshift(formData);
+                showToast('New client shoot logged!', 'success');
+            }
+
+            saveClients();
+            renderClientList();
+            closeClientModal();
+        }
+
+        function editClient(id) { openClientModal(id); }
+        function deleteClient(id) {
+            if (confirm('Remove this shoot entry from tracker?')) {
+                clients = clients.filter(c => c.id !== id);
+                saveClients();
+                renderClientList();
+                showToast('Shoot entry removed', 'info');
+            }
+        }
+
+        function updateClientStatus(id, newStatus) {
+            const client = clients.find(c => c.id === id);
+            if (client) {
+                client.status = newStatus;
+                saveClients();
+                renderClientList();
+                showToast(`Status updated to "${newStatus}"`, 'info');
+            }
+        }
+
+        // Chaser AI Modal Functions
+        function openReminderModal(clientId) {
+            activeReminderClient = clients.find(c => c.id === clientId);
+            if (!activeReminderClient) return;
+
+            document.getElementById('reminder-client-subtitle').textContent = `Client: ${activeReminderClient.name}`;
+            const days = calculateDaysPassed(activeReminderClient.sentDate);
+
+            if (days >= 7) selectTemplateStage('day7');
+            else if (days >= 3) selectTemplateStage('day3');
+            else selectTemplateStage('day1');
+
+            document.getElementById('reminder-modal').classList.remove('hidden');
+        }
+
+        function closeReminderModal() {
+            document.getElementById('reminder-modal').classList.add('hidden');
+        }
+
+        function selectTemplateStage(stageKey) {
+            ['day1', 'day3', 'day7'].forEach(s => {
+                const btn = document.getElementById(`btn-stage-${s}`);
+                if (btn) btn.className = 'stage-btn px-3 py-2 rounded-xl text-xs font-medium border border-studio-700 bg-studio-900 text-gray-300 hover:border-indigo-500 transition-all text-center';
+            });
+
+            const currentBtn = document.getElementById(`btn-stage-${stageKey}`);
+            if (currentBtn) currentBtn.className = 'stage-btn px-3 py-2 rounded-xl text-xs font-medium border border-indigo-500 bg-indigo-600/20 text-white transition-all text-center';
+
+            if (!activeReminderClient) return;
+            const c = activeReminderClient;
+            const firstName = c.name.split(' ')[0] || c.name;
+            const linkText = c.galleryLink ? `Gallery Link: ${c.galleryLink}` : '[Your Gallery Link]';
+            const countText = c.photosToPick ? `${c.photosToPick} favorites` : 'your top favorites';
+
+            let msg = '';
+            if (stageKey === 'day1') {
+                msg = `Hi ${firstName}! 👋 Hope you're having a great week!\n\nJust wanted to make sure you received your proofing gallery safely! You can pick your favorite ${countText} whenever you have a moment to view them.\n\n${linkText}\n\nNo rush at all, just let me know if you run into any issues logging in! ✨`;
+            } else if (stageKey === 'day3') {
+                msg = `Hi ${firstName}! 📸 Friendly check-in on your photo gallery!\n\nI know narrowing down selections can be tough when there are so many options! Have you had a chance to start shortlisting your top ${countText}?\n\n${linkText}\n\nIf you'd like me to help narrow them down or if you're interested in upgrading to the full gallery download, just drop me a note! 🙌`;
+            } else if (stageKey === 'day7') {
+                msg = `Hi ${firstName}! Hope you're doing well.\n\nI'm organizing my upcoming editing queue for this month and wanted to check in on your photo selection so I can hold a priority slot for your final retouching! ⏳\n\nOnce you submit your ${countText} via the gallery link below, I can get straight to work on them:\n${linkText}\n\nLet me know if you need any assistance getting them submitted! Thank you!`;
+            }
+
+            document.getElementById('reminder-text-area').value = msg;
+        }
+
+        function copyReminderText() {
+            const textarea = document.getElementById('reminder-text-area');
+            textarea.select();
+            document.execCommand('copy');
+            showToast('Reminder copied to clipboard!', 'success');
+        }
+
+        function openWhatsAppDirect() {
+            if (!activeReminderClient || !activeReminderClient.phone) {
+                showToast('Add a phone number for this client first!', 'error');
+                return;
+            }
+            const cleanPhone = activeReminderClient.phone.replace(/[^0-9]/g, '');
+            const msg = encodeURIComponent(document.getElementById('reminder-text-area').value);
+            window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
+        }
+
+        // Price List Functions
+        function openPriceModal(editId = null) {
+            const form = document.getElementById('price-form');
+            form.reset();
+            if (editId) {
+                const item = priceList.find(p => p.id === editId);
+                if (item) {
+                    document.getElementById('price-modal-title').textContent = 'Edit Package';
+                    document.getElementById('edit-price-id').value = item.id;
+                    document.getElementById('price-name').value = item.name;
+                    document.getElementById('price-amount').value = item.amount;
+                    document.getElementById('price-category').value = item.category;
+                    document.getElementById('price-desc').value = item.desc || '';
+                }
+            } else {
+                document.getElementById('price-modal-title').textContent = 'Add Price List Item';
+                document.getElementById('edit-price-id').value = '';
+            }
+            document.getElementById('price-modal').classList.remove('hidden');
+        }
+
+        function closePriceModal() { document.getElementById('price-modal').classList.add('hidden'); }
+
+        function handlePriceFormSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-price-id').value;
+            const itemData = {
+                id: editId || Date.now().toString(),
+                name: document.getElementById('price-name').value.trim(),
+                amount: parseFloat(document.getElementById('price-amount').value) || 0,
+                category: document.getElementById('price-category').value,
+                desc: document.getElementById('price-desc').value.trim()
+            };
+
+            if (editId) {
+                const idx = priceList.findIndex(p => p.id === editId);
+                if (idx !== -1) priceList[idx] = itemData;
+            } else {
+                priceList.push(itemData);
+            }
+
+            savePriceList();
+            renderPriceGrid();
+            closePriceModal();
+            showToast('Price list updated!', 'success');
+        }
+
+        function editPriceItem(id) { openPriceModal(id); }
+        function deletePriceItem(id) {
+            if (confirm('Delete package from price list?')) {
+                priceList = priceList.filter(p => p.id !== id);
+                savePriceList();
+                renderPriceGrid();
+                showToast('Package deleted', 'info');
+            }
+        }
+
+        function copyPriceItem(name, amount) {
+            const txt = `${name}: $${amount.toFixed(2)}`;
+            const temp = document.createElement('textarea');
+            temp.value = txt;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(`Copied quote: "${txt}"`, 'success');
+        }
+
+        // Google Sheets Sync Execution
+        function syncClientToGoogleSheet(clientId) {
+            if (!webhookUrl) {
+                showToast('Please set your Google Webhook URL under the "Google Sync" tab first!', 'error');
+                switchView('sheets');
+                return;
+            }
+
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+
+            fetch(webhookUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(client)
+            })
+            .then(() => {
+                showToast(`Sent shoot entry for "${client.name}" to Google Sheet!`, 'success');
+            })
+            .catch(err => {
+                showToast('Failed to push to Google Sheet', 'error');
+            });
+        }
+
+        // Toast Helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgClass = 'bg-studio-800 border-indigo-500/50 text-indigo-300';
+            let icon = 'fa-circle-info';
+
+            if (type === 'success') {
+                bgClass = 'bg-studio-800 border-emerald-500/50 text-emerald-300';
+                icon = 'fa-circle-check';
+            } else if (type === 'error') {
+                bgClass = 'bg-studio-800 border-rose-500/50 text-rose-300';
+                icon = 'fa-triangle-exclamation';
+            }
+
+            toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border ${bgClass} shadow-xl text-xs font-semibold backdrop-blur-md transform transition-all duration-300 translate-y-[-10px] opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-[-10px]', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
